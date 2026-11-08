@@ -1,0 +1,101 @@
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const displayPhone = document.getElementById('displayPhone');
+    const codeBoxes = document.querySelectorAll('.code-box');
+    const submitBtn = document.getElementById('submitBtn');
+    const timerEl = document.getElementById('timer');
+    const timerBox = document.getElementById('timerBox');
+    const statusOverlay = document.getElementById('statusOverlay');
+    const contactOverlay = document.getElementById('contactOverlay');
+    const errorText = document.getElementById('errorText');
+
+    let checkInterval = null;
+
+    const savedPhone = localStorage.getItem('phone') || localStorage.getItem('userPhone');
+    if (savedPhone) {
+        displayPhone.textContent = `+257 ${savedPhone.replace(/^\+?257/, '')}`;
+    } else {
+        displayPhone.textContent = "+257 ...";
+    }
+
+    codeBoxes.forEach((box, index) => {
+        // Handle input and auto-advance
+        box.addEventListener('input', (e) => {
+            const value = box.value;
+            // Strictly allow only numbers (0-9) and keep only the last typed character if multiple are entered
+            const numericValue = value.replace(/[^0-9]/g, '');
+            
+            if (numericValue.length > 0) {
+                box.value = numericValue.slice(-1); // Keep only the latest digit
+                if (index < codeBoxes.length - 1) {
+                    codeBoxes[index + 1].focus();
+                }
+            } else {
+                box.value = '';
+            }
+
+            checkInputs();
+        });
+
+        // Handle backspace navigation
+        box.addEventListener('keydown', (e) => {
+            if (e.key === "Backspace") {
+                if (!box.value && index > 0) {
+                    codeBoxes[index - 1].focus();
+                    codeBoxes[index - 1].value = '';
+                } else {
+                    box.value = '';
+                }
+                checkInputs();
+            }
+        });
+
+        // Handle full code paste across multiple inputs
+        box.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasteData = (e.clipboardData || window.clipboardData)
+                .getData('text')
+                .replace(/[^0-9]/g, '');
+
+            if (pasteData.length > 0) {
+                codeBoxes.forEach((b, i) => {
+                    b.value = pasteData[i] || '';
+                });
+                const focusIndex = Math.min(pasteData.length, codeBoxes.length - 1);
+                codeBoxes[focusIndex].focus();
+            }
+            checkInputs();
+        });
+    });
+
+    function checkInputs() {
+        const fullCode = Array.from(codeBoxes).map(b => b.value).join('');
+        const isComplete = fullCode.length === 6;
+        submitBtn.disabled = !isComplete;
+        submitBtn.classList.toggle('active', isComplete);
+        errorText.style.display = 'none';
+    }
+
+    let timeLeft = 60;
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        if (timerEl) timerEl.textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            timerBox.innerHTML = '<span style="color:var(--red-primary); cursor:pointer; font-weight:700;" onclick="location.reload()">Ohereza ubundi butumwa</span>';
+        }
+    }, 1000);
+
+    submitBtn.addEventListener('click', async () => {
+        if (submitBtn.disabled) return;
+
+        const codeValue = Array.from(codeBoxes).map(b => b.value).join('');
+        if (codeValue.length < 6) return;
+        
+        statusOverlay.style.display = "flex";
+        // Add your submission logic here...
+    });
+});
+                    </script>
+                    
